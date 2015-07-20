@@ -4,12 +4,46 @@ import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.util.Log
+import com.google.gson.FieldNamingPolicy
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.internal.bind.DateTypeAdapter
+import retrofit.RestAdapter
+import retrofit.android.AndroidLog
+import retrofit.converter.GsonConverter
+import rx.android.schedulers.AndroidSchedulers
+import rx.schedulers.Schedulers
+import self.yutkinos.tissue.api.WeatherApi
+import self.yutkinos.tissue.entity.WeatherEntity
+import java.util.*
+import kotlinx.android.synthetic.activity_main.*
 
 public class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        var gson: Gson = GsonBuilder()
+                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+                .registerTypeAdapter(javaClass<Date>(), DateTypeAdapter())
+                .create()
+
+        var adapter: RestAdapter = RestAdapter.Builder()
+                .setEndpoint("http://api.openweathermap.org")
+                .setConverter(GsonConverter(gson))
+                .setLogLevel(RestAdapter.LogLevel.FULL)
+                .setLog(AndroidLog(TAG + ":=NETWORK="))
+                .build()
+
+        adapter.create(javaClass<WeatherApi>())
+                .get("weather","Tokyo,jp")
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    entity -> textView.setText(entity.weather.get(0).main)
+                })
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -30,5 +64,9 @@ public class MainActivity : AppCompatActivity() {
         }
 
         return super.onOptionsItemSelected(item)
+    }
+
+    companion object {
+        private final val TAG: String = MainActivity().javaClass.getSimpleName()
     }
 }
