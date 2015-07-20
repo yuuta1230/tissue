@@ -18,6 +18,7 @@ import self.yutkinos.tissue.api.WeatherApi
 import self.yutkinos.tissue.entity.WeatherEntity
 import java.util.*
 import kotlinx.android.synthetic.activity_main.*
+import self.yutkinos.tissue.api.ApiClient
 
 public class MainActivity : AppCompatActivity() {
 
@@ -25,19 +26,7 @@ public class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        var gson: Gson = GsonBuilder()
-                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-                .registerTypeAdapter(javaClass<Date>(), DateTypeAdapter())
-                .create()
-
-        var adapter: RestAdapter = RestAdapter.Builder()
-                .setEndpoint("http://api.openweathermap.org")
-                .setConverter(GsonConverter(gson))
-                .setLogLevel(RestAdapter.LogLevel.FULL)
-                .setLog(AndroidLog(TAG + ":=NETWORK="))
-                .build()
-
-        adapter.create(javaClass<WeatherApi>())
+        ApiClient.getWeatherApi()
                 .get("weather","Tokyo,jp")
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
